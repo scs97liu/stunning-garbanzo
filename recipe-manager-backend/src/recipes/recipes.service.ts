@@ -1,15 +1,58 @@
-import { Injectable } from '@nestjs/common';
-import { RecipeInterface } from './interfaces/recipe.interface';
+import { InjectModel } from '@nestjs/azure-database';
+import { Container } from '@azure/cosmos';
+import { Logger, Injectable } from '@nestjs/common';
+import { Recipe } from './recipes.model';
 
 @Injectable()
 export class RecipesService {
-  private readonly recipes: RecipeInterface[] = [];
+  constructor(@InjectModel(Recipe) private readonly container: Container) {}
+  private logger = new Logger(this.constructor.name);
 
-  create(recipe: RecipeInterface) {
-    this.recipes.push(recipe);
+  async create(item: Recipe): Promise<Recipe> {
+    const response = await this.container.items.create(item);
+    this.logger.verbose(`Create RUs: ${response.requestCharge}`);
+    return response.resource;
   }
 
-  findAll(): RecipeInterface[] {
-    return this.recipes;
+  async upsert(item: Recipe): Promise<Recipe> {
+    const response = await this.container.items.upsert<Recipe>(item);
+    this.logger.verbose(`Upsert RUs: ${response.requestCharge}`);
+    return response.resource;
+  }
+
+  async remove(id: string, partitionKeyValue: any) {
+    const item = this.container.item(id, partitionKeyValue);
+    const result = await item.delete();
+    this.logger.verbose(`Remove item RUs: ${result.requestCharge}`);
+  }
+
+  async findAll(): Promise<Recipe[]> {
+    const querySpec = {
+      query: 'SELECT * FROM root r',
+    };
+
+    const results = await this.container.items
+      .query<Recipe>(querySpec, {})
+      .fetchAll();
+    this.logger.verbose(`Find By Id RUs: ${results.requestCharge}`);
+    return results.resources;
+  }
+
+  async findById(id: string): Promise<Recipe> {
+    const querySpec = {
+      query: 'SELECT * FROM root r WHERE r.id=@id',
+      parameters: [
+        {
+          name: '@id',
+          value: id,
+        },
+      ],
+    };
+
+    const results = await this.container.items
+      .query<Recipe>(querySpec, {})
+      .fetchAll();
+    this.logger.verbose(`Find By Id RUs: ${results.requestCharge}`);
+    return results.resources.shift();
   }
 }
