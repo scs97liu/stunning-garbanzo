@@ -14,12 +14,6 @@ export class RecipesService {
     return response.resource;
   }
 
-  async upsert(item: Recipe): Promise<Recipe> {
-    const response = await this.container.items.upsert<Recipe>(item);
-    this.logger.verbose(`Upsert RUs: ${response.requestCharge}`);
-    return response.resource;
-  }
-
   async remove(id: string, partitionKeyValue: any) {
     const item = this.container.item(id, partitionKeyValue);
     const result = await item.delete();
@@ -55,4 +49,24 @@ export class RecipesService {
     this.logger.verbose(`Find By Id RUs: ${results.requestCharge}`);
     return results.resources.shift();
   }
+
+  //TODO UPDATE
+  
+  // async update(id: string, recipe: Recipe): Promise<Recipe> {
+  //     const item = await this.findById(id)
+
+  //     // Disclaimer: Assign only the properties you are expecting!
+  //     Object.assign(item, recipe);
+
+  //     const { resource: replaced } = await this.container
+  //      .item(id, 'id')
+  //      .replace<Recipe>(item)
+  //     return replaced
+  // }
+  
+  // async upsert(item: Recipe): Promise<Recipe> {
+  //   const response = await this.container.items.upsert<Recipe>(item);
+  //   this.logger.verbose(`Upsert RUs: ${response.requestCharge}`);
+  //   return response.resource;
+  // }
 }
