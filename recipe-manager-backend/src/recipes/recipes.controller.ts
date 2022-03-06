@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body  } from '@nestjs/common';
-import { CreateRecipeDto } from './dto/create-recipe.dto';
 import { RecipesService } from './recipes.service';
-import { RecipeInterface } from './interfaces/recipe.interface';
+import { Recipe } from './recipes.model'
 
 @Controller('recipes')
 export class RecipesController {
@@ -9,33 +8,29 @@ export class RecipesController {
     constructor(private recipesService: RecipesService) {}
     
     @Get() // /recipes
-    async findAll(): Promise<RecipeInterface[]> {
+    async findAll(): Promise<Recipe[]> {
         return this.recipesService.findAll();
     }
 
     @Post() // /recipes
-    async create(@Body() CreateRecipeDto: CreateRecipeDto) {
-        this.recipesService.create(CreateRecipeDto);
+    async create(@Body() recipe: Recipe) {
+        this.recipesService.create(recipe);
     }
 
     
-    @Get(':id') // /recipes:id
-    findOne(@Param() params): string {
-    console.log(params.id);
-    return `This action returns a #${params.id} user`;
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+      return this.recipesService.findById(id);
     }
 
-    @Patch(':id') // /recipes:id
-    updateOne(@Param() params): string {
-    console.log(params.id);
-    return `This action updates a #${params.id} user`;
-    }
-
-    @Delete(':id') // /recipes:id
-    deleteOne(@Param() params): string {
-    console.log(params.id);
-    return `This action deletes a #${params.id} user`;
+    @Patch(':id')
+    updateOne(@Param('id') recipe: Recipe) {
+      return this.recipesService.upsert(recipe);
     }
 
 
+    @Delete(':id')
+    deleteOne(@Param('id') id: string) {
+      return this.recipesService.remove(id, id);
+    }
 }
